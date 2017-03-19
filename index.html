@@ -15,7 +15,13 @@
 			var camera = new THREE.PerspectiveCamera(100, window.innerWidth / window.innerHeight, 0.1, 1000);
 			
 			// Set initial camera position
+			camera.position.x = 17;
+			camera.position.y = 5;;
 			camera.position.z = 25;
+			
+			//camera.rotation.x = THREE.Math.degToRad( 90 );
+			
+			
 			
 			var controls = new THREE.OrbitControls(camera);
 			var renderer = new THREE.WebGLRenderer();
@@ -31,23 +37,23 @@
 			
 			// PointLight 1 BottomLeft
 			var pointLight1 = new THREE.PointLight( 0xFFFFFF, 1, 50 ); 
-			pointLight1.position.x = -5; 
-			pointLight1.position.y = -5; 
-			pointLight1.position.z = 8; 
+			pointLight1.position.x = -2; 
+			pointLight1.position.y = 10; 
+			pointLight1.position.z = 2; 
 			scene.add(pointLight1);
 			
 			// PointLight 2 BottomRight
 			var pointLight2 = new THREE.PointLight( 0xFFFFFF, 1, 50 ); 
-			pointLight2.position.x = 40; 
-			pointLight2.position.y = -5; 
-			pointLight2.position.z = 8; 
+			pointLight2.position.x = 42; 
+			pointLight2.position.y = 10; 
+			pointLight2.position.z = 2; 
 			scene.add(pointLight2);
 			
 			// PointLight 3 UpperLeft
 			var pointLight3 = new THREE.PointLight( 0xFFFFFF, 1, 50 ); 
-			pointLight3.position.x = -5; 
-			pointLight3.position.y = 30; 
-			pointLight3.position.z = 8; 
+			pointLight3.position.x = -2; 
+			pointLight3.position.y = 10; 
+			pointLight3.position.z = -29; 
 			scene.add(pointLight3);
 			
 			// Gets companionCube texture
@@ -59,55 +65,47 @@
 			var companionCube = new THREE.Mesh( geometryCube, materialCube );
 			
 			companionCube.position.x = 23.5;
-			companionCube.position.y = 9;
-			companionCube.position.z = 3;
+			companionCube.position.y = 3;3
+			companionCube.position.z = -9;
 			
 			scene.add( companionCube );
 			
 			// GunRay
 			var geometryRay = new THREE.TorusKnotGeometry( 0.4, 0.01, 103, 8, 3, 9);
-			var materialRay = new THREE.MeshStandardMaterial( { color: 0xEF7A26 } );
+			var materialRay = new THREE.MeshBasicMaterial( { color: 0xEF7A26 } );
 			var ray1 = new THREE.Mesh( geometryRay, materialRay );
 			var ray2 = new THREE.Mesh( geometryRay, materialRay );
 			
-			ray1.position.x = 6.5;
-			ray1.position.y = 12.5;
-			ray1.position.z = 1.50;
+			ray1.position.x = 6;
+			ray1.position.y = 3.35;
+			ray1.position.z = -16.5;
 			
-			ray1.rotation.x = THREE.Math.degToRad( 90 );
+			ray2.rotation.x = THREE.Math.degToRad( 90 );
 			
-			ray2.position.x = 6.5;
-			ray2.position.y = 12.5;
-			ray2.position.z = 1.50;
+			ray2.position.x = ray1.position.x;
+			ray2.position.y = ray1.position.y;
+			ray2.position.z = ray1.position.z;
 			
 			scene.add( ray1 );
 			scene.add( ray2 );
 			
 			// GunRayCore
-			var geometry = new THREE.SphereGeometry( 0.1, 32, 32 );
-			var material = new THREE.MeshStandardMaterial( {color: 0xEF7A26} );
-			var rayCore = new THREE.Mesh( geometry, material );
+			var geometryRayCore = new THREE.SphereGeometry( 0.1, 32, 32 );
+			var materialRayCore = new THREE.MeshBasicMaterial( {color: 0xEF7A26} );
+			var rayCore = new THREE.Mesh( geometryRayCore, materialRayCore );
 			
-			rayCore.position.x = ray.position.x;
-			rayCore.position.y = ray.position.y;
-			rayCore.position.z = ray.position.z;
+			rayCore.position.x = ray1.position.x;
+			rayCore.position.y = ray1.position.y;
+			rayCore.position.z = ray1.position.z;
 			
 			scene.add( rayCore );
-			
-			// GunRay Light
-			var rayLight = new THREE.PointLight( 0xEF7A26, 30, 3, 2 );
-			
-			rayLight.position.x = ray.position.x; 
-			rayLight.position.y = ray.position.y; 
-			rayLight.position.z = ray.position.z;
-			
-			//scene.add(rayLight);
 			
 			// Init collada loader
 			var loader = new THREE.ColladaLoader();
 			
 			// Load scene
 			loader.load("models/levelDraft.dae", function (resultRoom) {
+				resultRoom.scene.rotation.x = THREE.Math.degToRad( -90 );
 				scene.add(resultRoom.scene);
 			});
 			
@@ -116,10 +114,11 @@
 			
 				resultChell.scene.rotation.z = THREE.Math.degToRad( 90 );
 				resultChell.scene.rotation.y = THREE.Math.degToRad( -3 );
+				resultChell.scene.rotation.x = THREE.Math.degToRad( -90 );
 				
-				resultChell.scene.position.x = 6.5;
-				resultChell.scene.position.y = 20.5;
-				resultChell.scene.position.z = 3.35;
+				resultChell.scene.position.x = 6;
+				resultChell.scene.position.y = 3.35;
+				resultChell.scene.position.z = -20;
 				
 				scene.add(resultChell.scene);
 			});
