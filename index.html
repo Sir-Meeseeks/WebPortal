@@ -7,22 +7,17 @@
 		</style>
 	</head>
 	<body>
+		<script src="js/utils.js"></script>
 		<script src="lib/three.min.js"></script>
 		<script src="lib/ColladaLoader.js"></script>
 		<script src="lib/OrbitControls.js"></script>
+		<script src="lib/PointerLockControls.js"></script>
 		<script>
 			var scene = new THREE.Scene();
 			var camera = new THREE.PerspectiveCamera(100, window.innerWidth / window.innerHeight, 0.1, 1000);
-			
-			// Set initial camera position
-			camera.position.x = 17;
-			camera.position.y = 5;;
-			camera.position.z = 25;
-			
-			//camera.rotation.x = THREE.Math.degToRad( 90 );
-			
-			
-			
+			camera.position.x = 6.5; camera.position.y = 5.57; camera.position.z = -18.54;
+			camera.rotation.x = -2.83; camera.rotation.y = 0.22; camera.rotation.z = 3.07;
+			scene.add(camera);
 			var controls = new THREE.OrbitControls(camera);
 			var renderer = new THREE.WebGLRenderer();
 			renderer.setSize( window.innerWidth, window.innerHeight );
@@ -35,71 +30,6 @@
 				camera.updateProjectionMatrix()		
 			}, false)
 			
-			// PointLight 1 BottomLeft
-			var pointLight1 = new THREE.PointLight( 0xFFFFFF, 1, 50 ); 
-			pointLight1.position.x = -2; 
-			pointLight1.position.y = 10; 
-			pointLight1.position.z = 2; 
-			scene.add(pointLight1);
-			
-			// PointLight 2 BottomRight
-			var pointLight2 = new THREE.PointLight( 0xFFFFFF, 1, 50 ); 
-			pointLight2.position.x = 42; 
-			pointLight2.position.y = 10; 
-			pointLight2.position.z = 2; 
-			scene.add(pointLight2);
-			
-			// PointLight 3 UpperLeft
-			var pointLight3 = new THREE.PointLight( 0xFFFFFF, 1, 50 ); 
-			pointLight3.position.x = -2; 
-			pointLight3.position.y = 10; 
-			pointLight3.position.z = -29; 
-			scene.add(pointLight3);
-			
-			// Gets companionCube texture
-			var textureCube = new THREE.TextureLoader().load( 'textures/companionCubeFace.png' );
-			
-			// CompanionCube
-			var geometryCube = new THREE.BoxGeometry( 1.5, 1.5, 1.5 );
-			var materialCube = new THREE.MeshBasicMaterial({ map:textureCube });
-			var companionCube = new THREE.Mesh( geometryCube, materialCube );
-			
-			companionCube.position.x = 23.5;
-			companionCube.position.y = 3;3
-			companionCube.position.z = -9;
-			
-			scene.add( companionCube );
-			
-			// GunRay
-			var geometryRay = new THREE.TorusKnotGeometry( 0.4, 0.01, 103, 8, 3, 9);
-			var materialRay = new THREE.MeshBasicMaterial( { color: 0xEF7A26 } );
-			var ray1 = new THREE.Mesh( geometryRay, materialRay );
-			var ray2 = new THREE.Mesh( geometryRay, materialRay );
-			
-			ray1.position.x = 6;
-			ray1.position.y = 3.35;
-			ray1.position.z = -16.5;
-			
-			ray2.rotation.x = THREE.Math.degToRad( 90 );
-			
-			ray2.position.x = ray1.position.x;
-			ray2.position.y = ray1.position.y;
-			ray2.position.z = ray1.position.z;
-			
-			scene.add( ray1 );
-			scene.add( ray2 );
-			
-			// GunRayCore
-			var geometryRayCore = new THREE.SphereGeometry( 0.1, 32, 32 );
-			var materialRayCore = new THREE.MeshBasicMaterial( {color: 0xEF7A26} );
-			var rayCore = new THREE.Mesh( geometryRayCore, materialRayCore );
-			
-			rayCore.position.x = ray1.position.x;
-			rayCore.position.y = ray1.position.y;
-			rayCore.position.z = ray1.position.z;
-			
-			scene.add( rayCore );
-			
 			// Init collada loader
 			var loader = new THREE.ColladaLoader();
 			
@@ -110,25 +40,104 @@
 			});
 			
 			// Load main character
-			loader.load("models/chell.dae", function (resultChell) {
+			var outterChell;
+			loader.load("models/chell2.dae", function (resultChell) {
 			
 				resultChell.scene.rotation.z = THREE.Math.degToRad( 90 );
 				resultChell.scene.rotation.y = THREE.Math.degToRad( -3 );
 				resultChell.scene.rotation.x = THREE.Math.degToRad( -90 );
 				
 				resultChell.scene.position.x = 6;
-				resultChell.scene.position.y = 3.35;
+				resultChell.scene.position.y = 3.75;
 				resultChell.scene.position.z = -20;
 				
-				scene.add(resultChell.scene);
+				outterChell = resultChell.scene;
+				scene.add(outterChell);
 			});
 			
+			document.addEventListener('keydown', function(event) {
+				if(event.keyCode == 65) {
+					camera.position.x = camera.position.x + 0.2;
+					outterChell.position.x = outterChell.position.x + 0.2;
+					cameraVector.applyQuaternion( camera.quaternion );
+				}
+				else if(event.keyCode == 68) {
+					camera.position.x = camera.position.x - 0.2;
+					outterChell.position.x = outterChell.position.x - 0.2;
+					cameraVector.applyQuaternion( camera.quaternion );
+				}
+				else if(event.keyCode == 87) {
+					camera.position.z = camera.position.z + 0.2;
+					outterChell.position.z = outterChell.position.z + 0.2;
+					cameraVector.applyQuaternion( camera.quaternion );
+				}
+				else if(event.keyCode == 83) {
+					camera.position.z = camera.position.z - 0.2;
+					outterChell.position.z = outterChell.position.z - 0.2;
+					cameraVector.applyQuaternion( camera.quaternion );
+				}
+			});
+			
+			
+			// GunRay
+			var geometryRay = new THREE.TorusKnotGeometry( 0.4, 0.01, 103, 8, 3, 9);
+			var materialRay = new THREE.MeshBasicMaterial( { color: 0xEF7A26 } );
+			var ray1 = new THREE.Mesh( geometryRay, materialRay );
+			var ray2 = new THREE.Mesh( geometryRay, materialRay );
+			ray1.position.x = 6;
+			ray1.position.y = 3.35;
+			ray1.position.z = -16.5;
+			ray2.rotation.x = THREE.Math.degToRad( 90 );
+			ray2.position.x = ray1.position.x;
+			ray2.position.y = ray1.position.y;
+			ray2.position.z = ray1.position.z;
+			//scene.add( ray1 );
+			//scene.add( ray2 );
+
+			// GunRayCore
+			var geometryRayCore = new THREE.SphereGeometry( 0.1, 32, 32 );
+			var materialRayCore = new THREE.MeshBasicMaterial( {color: 0xEF7A26} );
+			var rayCore = new THREE.Mesh( geometryRayCore, materialRayCore );
+			rayCore.position.x = ray1.position.x;
+			rayCore.position.y = ray1.position.y;
+			rayCore.position.z = ray1.position.z;
+			//scene.add( rayCore );
+			
+			// CompanionCube
+			var textureCube = new THREE.TextureLoader().load( '../textures/companionCubeFace.png' );
+			var geometryCube = new THREE.BoxGeometry( 1.5, 1.5, 1.5 );
+			var materialCube = new THREE.MeshBasicMaterial({ map:textureCube });
+			var companionCube = new THREE.Mesh( geometryCube, materialCube );
+			companionCube.position.x = 23.5;
+			companionCube.position.y = 3;3
+			companionCube.position.z = -9;
+			scene.add(companionCube);
+			
+			// PointLight 1 BottomLeft
+			var pointLight1 = new THREE.PointLight( 0xFFFFFF, 1, 50 ); 
+			pointLight1.position.x = -2; 
+			pointLight1.position.y = 10; 
+			pointLight1.position.z = 2;
+			scene.add(pointLight1);
+			// PointLight 2 BottomRight
+			var pointLight2 = new THREE.PointLight( 0xFFFFFF, 1, 50 ); 
+			pointLight2.position.x = 42; 
+			pointLight2.position.y = 10; 
+			pointLight2.position.z = 2;
+			scene.add(pointLight2);
+			// PointLight 3 UpperLeft
+			var pointLight3 = new THREE.PointLight( 0xFFFFFF, 1, 50 ); 
+			pointLight3.position.x = -2; 
+			pointLight3.position.y = 10; 
+			pointLight3.position.z = -29;
+			scene.add(pointLight3);
+			
+			// keep looping
 			requestAnimationFrame(function animate(){
-				// Keep looping
 				requestAnimationFrame( animate );
 				renderer.render( scene, camera );
-			})
-			
+				//updateText();
+			});
 		</script>
 	</body>
 </html>
