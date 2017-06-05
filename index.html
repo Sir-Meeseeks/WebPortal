@@ -7,10 +7,9 @@
 		</style>
 	</head>
 	<body>
-		<script src="js/three.min.js"></script>
-		<script src="js/ColladaLoader.js"></script>
-		<script src="js/OrbitControls.js"></script>
-		<script src="js/PointerLockControls.js"></script>
+		<script src="lib/three.min.js"></script>
+		<script src="lib/ColladaLoader.js"></script>
+		<script src="lib/PointerLockControls.js"></script>
 		<script>
 			var scene = new THREE.Scene();
 			var camera = new THREE.PerspectiveCamera(100, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -71,17 +70,11 @@
 			var gravity = 1.6;
 			
 			var rayDown = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, -1, 0 ) );
-			//camera.add(rayDown);
 			var rayUp = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, 1, 0 ) );
-			//camera.add(rayUp);
 			var rayForward = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, 0, -1 ) );
-			//camera.add(rayForward);
 			var rayBackward = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, 0, 1 ) );
-			//camera.add(rayBackwards);
 			var rayLeft = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( -1, 0, 0 ) );
-			//camera.add(rayLeft);
 			var rayRight = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 1, 0, 0 ) );
-			//camera.add(rayRight);
 			
 			var tester = document.createElement('div');
 			tester.style.position = 'absolute';
@@ -177,20 +170,28 @@
 					var intersecUp = rayUp.intersectObjects( scene.children, true );
 					collUp = intersecUp.length > 0 && intersecUp[0].distance < 2;
 					
-					var direction = new THREE.Vector3().normalize();
-					rayForward.set( controls.getObject().position, controls.getDirection ( direction ) );
+					var direction = new THREE.Vector3();
+					controls.getDirection( direction );
+					direction = direction.normalize();
+					var axis = new THREE.Vector3(0,1,0);
+					
+					var dirForward = new THREE.Vector3(direction.x, controls.getObject().position.y, direction.z).normalize();
+					rayForward.set( controls.getObject().position, dirForward );
 					var intersecForward = rayForward.intersectObjects( scene.children, true );
 					collForward = intersecForward.length > 0 && intersecForward[0].distance < 2;
 					
-					rayBackward.set( controls.getObject().position, controls.getDirection ( direction ) );
+					var dirBackward = dirForward.applyAxisAngle( axis, Math.PI );
+					rayBackward.set( controls.getObject().position, dirBackward );
 					var intersecBackward = rayBackward.intersectObjects( scene.children, true );
 					collBackward = intersecBackward.length > 0 && intersecBackward[0].distance < 2;
 					
-					rayLeft.set( controls.getObject().position, controls.getDirection ( direction ) );
+					var dirLeft = dirForward.applyAxisAngle( axis, -Math.PI/2 );
+					rayLeft.set( controls.getObject().position, dirLeft );
 					var intersecLeft = rayLeft.intersectObjects( scene.children, true );
 					collLeft = intersecLeft.length > 0 && intersecLeft[0].distance < 2;
 					
-					rayRight.set( controls.getObject().position, controls.getDirection ( direction ) );
+					var dirRight = dirLeft.applyAxisAngle( axis, Math.PI );
+					rayRight.set( controls.getObject().position, dirRight );
 					var intersecRight = rayRight.intersectObjects( scene.children, true );
 					collRight = intersecRight.length > 0 && intersecRight[0].distance < 2;
 					
@@ -209,10 +210,10 @@
 						jump = true;
 					}
 					if ( collUp === true ) velocity.y = Math.min( 0, velocity.y );
-					if ( collForward === true ) velocity.z = max( 0, velocity.z );
-					if ( collBackward === true ) velocity.z = min( 0, velocity.z );
-					if ( collLeft === true ) velocity.x = max( 0, velocity.z );
-					if ( collRight === true ) velocity.x = min( 0, velocity.z );
+					if ( collForward === true ) velocity.z = Math.max( 0, velocity.z );
+					if ( collBackward === true ) velocity.z = Math.min( 0, velocity.z );
+					if ( collLeft === true ) velocity.x = Math.max( 0, velocity.x );
+					if ( collRight === true ) velocity.x = Math.min( 0, velocity.x );
 				
 					controls.getObject().translateX( velocity.x * delta );
 					controls.getObject().translateY( velocity.y * delta );
