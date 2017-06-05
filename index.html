@@ -7,136 +7,222 @@
 		</style>
 	</head>
 	<body>
-		<script src="js/utils.js"></script>
-		<script src="lib/three.min.js"></script>
-		<script src="lib/ColladaLoader.js"></script>
-		<script src="lib/OrbitControls.js"></script>
-		<script src="lib/PointerLockControls.js"></script>
+		<script src="js/three.min.js"></script>
+		<script src="js/ColladaLoader.js"></script>
+		<script src="js/OrbitControls.js"></script>
+		<script src="js/PointerLockControls.js"></script>
 		<script>
 			var scene = new THREE.Scene();
 			var camera = new THREE.PerspectiveCamera(100, window.innerWidth / window.innerHeight, 0.1, 1000);
-			camera.position.x = 6.5; camera.position.y = 5.57; camera.position.z = -18.54;
-			camera.rotation.x = -2.83; camera.rotation.y = 0.22; camera.rotation.z = 3.07;
-			scene.add(camera);
-			var controls = new THREE.OrbitControls(camera);
+			var controls = new THREE.PointerLockControls( camera );
 			var renderer = new THREE.WebGLRenderer();
+			var loader = new THREE.ColladaLoader();
+			
+			scene.add( controls.getObject() );
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			document.body.appendChild( renderer.domElement );
 			
-			// Handle window resize
 			window.addEventListener('resize', function(){
 				renderer.setSize( window.innerWidth, window.innerHeight )
 				camera.aspect = window.innerWidth / window.innerHeight
 				camera.updateProjectionMatrix()		
 			}, false)
 			
-			// Init collada loader
-			var loader = new THREE.ColladaLoader();
+
+			var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
+			if ( havePointerLock ) {
+				var element = document.body;
+				var pointerlockchange = function ( event ) {
+					if ( document.pointerLockElement === element || document.mozPointerLockElement === element || document.webkitPointerLockElement === element ) {
+						controlsEnabled = true;
+						controls.enabled = true;
+					} else {
+						controls.enabled = false;
+					}
+				};
+				document.addEventListener( 'pointerlockchange', pointerlockchange, false );
+				document.addEventListener( 'mozpointerlockchange', pointerlockchange, false );
+				document.addEventListener( 'webkitpointerlockchange', pointerlockchange, false );
+				element.requestPointerLock = element.requestPointerLock || element.mozRequestPointerLock || element.webkitRequestPointerLock;
+				element.requestPointerLock();
+				document.addEventListener( 'click', function ( event ) {
+					element.requestPointerLock = element.requestPointerLock || element.mozRequestPointerLock || element.webkitRequestPointerLock;
+					element.requestPointerLock();
+				}, false );
+			}
 			
-			// Load scene
-			loader.load("models/levelDraft.dae", function (resultRoom) {
-				resultRoom.scene.rotation.x = THREE.Math.degToRad( -90 );
-				scene.add(resultRoom.scene);
+			var controlsEnabled = false;
+			var pause = false;
+			var moveForward = false;
+			var moveBackward = false;
+			var moveLeft = false;
+			var moveRight = false;
+			var collForward = false;
+			var collBackward = false;
+			var collLeft = false;
+			var collRight = false;
+			var collUp = false;
+			var collDown = false;
+			var jump = false;
+			var prevTime = performance.now();
+			var velocity = new THREE.Vector3();
+			var outterChell;
+			var speed = 200;
+			var gravity = 1.6;
+			
+			var rayDown = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, -1, 0 ) );
+			//camera.add(rayDown);
+			var rayUp = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, 1, 0 ) );
+			//camera.add(rayUp);
+			var rayForward = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, 0, -1 ) );
+			//camera.add(rayForward);
+			var rayBackward = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, 0, 1 ) );
+			//camera.add(rayBackwards);
+			var rayLeft = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( -1, 0, 0 ) );
+			//camera.add(rayLeft);
+			var rayRight = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 1, 0, 0 ) );
+			//camera.add(rayRight);
+			
+			var tester = document.createElement('div');
+			tester.style.position = 'absolute';
+			tester.style.width = 200;
+			tester.style.height = 200;
+			tester.style.backgroundColor = "blue";
+			tester.innerHTML = 0;
+			tester.style.top = 0 + 'px';
+			tester.style.left = 0 + 'px';
+			document.body.appendChild(tester);
+
+			function updateText(forward,backward,left,right,up,down) {
+				tester.innerHTML = "Forward: " + forward.toString() + "<br>Backward: " + backward.toString() + "<br>Left: " + left.toString() + "<br>Right:  " + right.toString()
+				+ "<br>Up: " + up.toString() + "<br>Down: " + down.toString() + "<br>Camera: " + controls.getObject().rotation.x;
+			}
+			
+			document.addEventListener('keydown', function(event) {
+				if ( event.keyCode == 65 ) {
+					moveLeft = true;
+				}
+				if ( event.keyCode == 68 ) {
+					moveRight = true;
+				}
+				if ( event.keyCode == 87 ) {
+					moveForward = true;
+				}
+				if ( event.keyCode == 83 ) {
+					moveBackward = true;
+				}
+				if ( event.keyCode == 32 ) {
+					if ( jump === true ) velocity.y += 5;
+					jump = false;
+				}
+				if (event.keyCode == 80) {
+					pause = !pause;
+				}
 			});
 			
-			// Load main character
-			var outterChell;
+			document.addEventListener('keyup', function(event) {
+				if ( event.keyCode == 65 ) {
+					moveLeft = false;
+				}
+				if ( event.keyCode == 68 ) {
+					moveRight = false;
+				}
+				if ( event.keyCode == 87 ) {
+					moveForward = false;
+				}
+				if ( event.keyCode == 83 ) {
+					moveBackward = false;
+				}
+			});
+
+			// Load character
 			loader.load("models/chell2.dae", function (resultChell) {
-			
 				resultChell.scene.rotation.z = THREE.Math.degToRad( 90 );
 				resultChell.scene.rotation.y = THREE.Math.degToRad( -3 );
 				resultChell.scene.rotation.x = THREE.Math.degToRad( -90 );
-				
 				resultChell.scene.position.x = 6;
-				resultChell.scene.position.y = 3.75;
+				resultChell.scene.position.y = 5.80;
 				resultChell.scene.position.z = -20;
 				
 				outterChell = resultChell.scene;
-				scene.add(outterChell);
+				//scene.add(outterChell);
+			});
+				
+			// Load scene
+			loader.load("models/levelDraft.dae", function (resultRoom) {
+				resultRoom.scene.rotation.x = THREE.Math.degToRad( -90 );
+				//scene.add(resultRoom.scene);
 			});
 			
-			document.addEventListener('keydown', function(event) {
-				if(event.keyCode == 65) {
-					camera.position.x = camera.position.x + 0.2;
-					outterChell.position.x = outterChell.position.x + 0.2;
-					cameraVector.applyQuaternion( camera.quaternion );
-				}
-				else if(event.keyCode == 68) {
-					camera.position.x = camera.position.x - 0.2;
-					outterChell.position.x = outterChell.position.x - 0.2;
-					cameraVector.applyQuaternion( camera.quaternion );
-				}
-				else if(event.keyCode == 87) {
-					camera.position.z = camera.position.z + 0.2;
-					outterChell.position.z = outterChell.position.z + 0.2;
-					cameraVector.applyQuaternion( camera.quaternion );
-				}
-				else if(event.keyCode == 83) {
-					camera.position.z = camera.position.z - 0.2;
-					outterChell.position.z = outterChell.position.z - 0.2;
-					cameraVector.applyQuaternion( camera.quaternion );
-				}
-			});
-			
-			
-			// GunRay
-			var geometryRay = new THREE.TorusKnotGeometry( 0.4, 0.01, 103, 8, 3, 9);
-			var materialRay = new THREE.MeshBasicMaterial( { color: 0xEF7A26 } );
-			var ray1 = new THREE.Mesh( geometryRay, materialRay );
-			var ray2 = new THREE.Mesh( geometryRay, materialRay );
-			ray1.position.x = 6;
-			ray1.position.y = 3.35;
-			ray1.position.z = -16.5;
-			ray2.rotation.x = THREE.Math.degToRad( 90 );
-			ray2.position.x = ray1.position.x;
-			ray2.position.y = ray1.position.y;
-			ray2.position.z = ray1.position.z;
-			//scene.add( ray1 );
-			//scene.add( ray2 );
-
-			// GunRayCore
-			var geometryRayCore = new THREE.SphereGeometry( 0.1, 32, 32 );
-			var materialRayCore = new THREE.MeshBasicMaterial( {color: 0xEF7A26} );
-			var rayCore = new THREE.Mesh( geometryRayCore, materialRayCore );
-			rayCore.position.x = ray1.position.x;
-			rayCore.position.y = ray1.position.y;
-			rayCore.position.z = ray1.position.z;
-			//scene.add( rayCore );
-			
-			// CompanionCube
-			var textureCube = new THREE.TextureLoader().load( '../textures/companionCubeFace.png' );
-			var geometryCube = new THREE.BoxGeometry( 1.5, 1.5, 1.5 );
-			var materialCube = new THREE.MeshBasicMaterial({ map:textureCube });
+			var geometryCube = new THREE.BoxGeometry( 10, 10, 10 );
+			var materialCube = new THREE.MeshBasicMaterial({ color: 0xfff00 });
 			var companionCube = new THREE.Mesh( geometryCube, materialCube );
-			companionCube.position.x = 23.5;
-			companionCube.position.y = 3;3
-			companionCube.position.z = -9;
 			scene.add(companionCube);
 			
-			// PointLight 1 BottomLeft
-			var pointLight1 = new THREE.PointLight( 0xFFFFFF, 1, 50 ); 
-			pointLight1.position.x = -2; 
-			pointLight1.position.y = 10; 
-			pointLight1.position.z = 2;
-			scene.add(pointLight1);
-			// PointLight 2 BottomRight
-			var pointLight2 = new THREE.PointLight( 0xFFFFFF, 1, 50 ); 
-			pointLight2.position.x = 42; 
-			pointLight2.position.y = 10; 
-			pointLight2.position.z = 2;
-			scene.add(pointLight2);
-			// PointLight 3 UpperLeft
-			var pointLight3 = new THREE.PointLight( 0xFFFFFF, 1, 50 ); 
-			pointLight3.position.x = -2; 
-			pointLight3.position.y = 10; 
-			pointLight3.position.z = -29;
-			scene.add(pointLight3);
+			var geometryPlane = new THREE.PlaneGeometry( 200, 200 );
+			geometryPlane.rotateX( -Math.PI / 2 );
+			var materialPlane = new THREE.MeshBasicMaterial({ color: 0x00ffff, side: THREE.DoubleSide });
+			var plane = new THREE.Mesh( geometryPlane, materialPlane );
+			scene.add(plane);
 			
-			// keep looping
 			requestAnimationFrame(function animate(){
 				requestAnimationFrame( animate );
+				
+				if ( !pause ) {
+					rayDown.ray.origin.copy( controls.getObject().position );
+					var intersecDown = rayDown.intersectObjects( scene.children, true );
+					collDown = intersecDown.length > 0 && intersecDown[0].distance < 2;
+					
+					rayUp.ray.origin.copy( controls.getObject().position );
+					var intersecUp = rayUp.intersectObjects( scene.children, true );
+					collUp = intersecUp.length > 0 && intersecUp[0].distance < 2;
+					
+					var direction = new THREE.Vector3().normalize();
+					rayForward.set( controls.getObject().position, controls.getDirection ( direction ) );
+					var intersecForward = rayForward.intersectObjects( scene.children, true );
+					collForward = intersecForward.length > 0 && intersecForward[0].distance < 2;
+					
+					rayBackward.set( controls.getObject().position, controls.getDirection ( direction ) );
+					var intersecBackward = rayBackward.intersectObjects( scene.children, true );
+					collBackward = intersecBackward.length > 0 && intersecBackward[0].distance < 2;
+					
+					rayLeft.set( controls.getObject().position, controls.getDirection ( direction ) );
+					var intersecLeft = rayLeft.intersectObjects( scene.children, true );
+					collLeft = intersecLeft.length > 0 && intersecLeft[0].distance < 2;
+					
+					rayRight.set( controls.getObject().position, controls.getDirection ( direction ) );
+					var intersecRight = rayRight.intersectObjects( scene.children, true );
+					collRight = intersecRight.length > 0 && intersecRight[0].distance < 2;
+					
+					var time = performance.now();
+					var delta = ( time - prevTime ) / 1000;
+					velocity.x -= velocity.x * 10.0 * delta;
+					velocity.z -= velocity.z * 10.0 * delta;
+					velocity.y -= gravity * 10.0 * delta;
+					if ( moveForward ) velocity.z -= speed * delta;
+					if ( moveBackward ) velocity.z += speed * delta;
+					if ( moveLeft ) velocity.x -= speed * delta;
+					if ( moveRight ) velocity.x += speed * delta;
+					
+					if ( collDown === true ) {
+						velocity.y = Math.max( 0, velocity.y );
+						jump = true;
+					}
+					if ( collUp === true ) velocity.y = Math.min( 0, velocity.y );
+					if ( collForward === true ) velocity.z = max( 0, velocity.z );
+					if ( collBackward === true ) velocity.z = min( 0, velocity.z );
+					if ( collLeft === true ) velocity.x = max( 0, velocity.z );
+					if ( collRight === true ) velocity.x = min( 0, velocity.z );
+				
+					controls.getObject().translateX( velocity.x * delta );
+					controls.getObject().translateY( velocity.y * delta );
+					controls.getObject().translateZ( velocity.z * delta );
+					
+					prevTime = time;
+				}
+				updateText(intersecForward.length,intersecBackward.length,intersecLeft.length,intersecRight.length,intersecUp.length,intersecDown.length);
+				
 				renderer.render( scene, camera );
-				//updateText();
 			});
 		</script>
 	</body>
